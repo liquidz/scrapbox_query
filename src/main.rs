@@ -25,7 +25,6 @@ use tantivy::schema::*;
 
 static CONFIG_FILE: &'static str = ".config/scrapq/config.toml";
 
-
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct ScrapBox {
     pub name: String,
@@ -115,49 +114,47 @@ fn create_index(json_file: &str, index_path: &str) -> Result<bool> {
 
         doc.add_text(title, page_title.as_str());
         doc.add_text(body, page_body.as_str());
-        index_writer.add_document(doc).chain_err(|| "failed to add document to index")?;
+        //index_writer.add_document(doc).chain_err(|| "failed to add document to index")?;
+        index_writer.add_document(doc);
     }
     index_writer.commit().map_err(|_| "failed to commit index")?;
 
     Ok(true)
 }
 
-fn search(index_path: &str, query: &str) -> Vec<SearchResult> {
+fn search(index_path: &str, query: &str) -> Result<Vec<SearchResult>> {
     let path = Path::new(index_path);
-    let index = Index::open(path).unwrap();
+    let index = Index::open(path).map_err(|_| "failed to open index")?;
 
     let searcher = index.searcher();
     let schema = index.schema();
-    let title_field = schema.get_field("title").unwrap();
-    let body_field = schema.get_field("body").unwrap();
+    let title_field = schema.get_field("title").ok_or("title field is not exists")?;
+    let body_field = schema.get_field("body").ok_or("body field is not exists")?;
     let query_parser = QueryParser::new(schema.clone(), vec![title_field, body_field]);
-    let query = query_parser.parse_query(query).unwrap();
+    let query = query_parser.parse_query(query).map_err(|_| "failed to parse query")?;
     let mut top_collector = TopCollector::with_limit(10);
-    query.search(&searcher, &mut top_collector).unwrap();
+    query.search(&searcher, &mut top_collector).map_err(|_| "failed to search")?;
 
     let mut result: Vec<SearchResult> = vec![];
     for doc_address in top_collector.docs() {
-        let retrieved_doc = searcher.doc(&doc_address).unwrap();
-        let title = retrieved_doc.get_first(title_field).unwrap();
+        let retrieved_doc = searcher.doc(&doc_address).map_err(|_| "failed to retrieve document")?;
+        let title = retrieved_doc.get_first(title_field).ok_or("document title is not exists")?;
         result.push(SearchResult {
             address: doc_address_to_string(doc_address),
             title: title.text().to_string(),
         });
     }
-    result
+    Ok(result)
 }
 
 fn get(index_path: &str, address: &str) -> Result<String> {
     let path = Path::new(index_path);
-    //let index = Index::open(path).chain_err(|| "failed to open index")?;
     let index = Index::open(path).map_err(|_| "failed to open index")?;
     let searcher = index.searcher();
     let schema = index.schema();
-    //let body_field = schema.get_field("body").chain_err(|| "failed to get body field")?;
     let body_field = schema.get_field("body").ok_or("body field is not exists")?;
 
     let doc_address = string_to_doc_address(address)?;
-    //let retrieved_doc = searcher.doc(&doc_address).chain_err(|| "failed to search document")?;
     let retrieved_doc = searcher.doc(&doc_address).map_err(|_| "failed to search document")?;
     let body = retrieved_doc.get_first(body_field).ok_or("document body is not exists")?;
 
@@ -214,21 +211,29 @@ fn main() {
                 }
             }
             Some("search") => {
-                let matches = matches.subcommand_matches("search").unwrap();
-                let query = matches.value_of("query").unwrap();
-                let results = search(config.index_path.as_str(), query);
-
-                if matches.is_present("json") {
-                    println!("{}", json::encode(&results).expect("failed to encode JSON"));
-                } else {
-                    for result in results {
-                        println!("{}\t{}", result.address, result.title);
+                let matches = matches.subcommand_matches("search")
+                    .expect("should match 'search' subcommand");
+                let query = matches.value_of("query").expect("should match 'query' value");
+                match search(config.index_path.as_str(), query) {
+                    Ok(results) => {
+                        if matches.is_present("json") {
+                            println!("{}", json::encode(&results).expect("failed to encode JSON"));
+                        } else {
+                            for result in results {
+                                println!("{}\t{}", result.address, result.title);
+                            }
+                        }
+                    }
+                    Err(ref e) => {
+                        println!("{:?}", e);
                     }
                 }
+
             }
             Some("get") => {
-                let matches = matches.subcommand_matches("get").unwrap();
-                let address = matches.value_of("address").unwrap();
+                let matches = matches.subcommand_matches("get")
+                    .expect("should match 'get' subcommand");
+                let address = matches.value_of("address").expect("should match 'address' value");
                 match get(config.index_path.as_str(), address) {
                     Ok(body) => println!("{}", body),
                     Err(ref e) => println!("{:?}", e),

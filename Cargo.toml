@@ -6,7 +6,7 @@ authors = ["liquidz <liquidz.uo@gmail.com>"]
 [dependencies]
 clap = "2.2"
 rustc-serialize = "0.3"
-tantivy = "0.2"
+tantivy = "0.3"
 tempdir = "0.3"
 toml = "0.2"
 error-chain = "0.10"
