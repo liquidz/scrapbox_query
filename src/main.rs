@@ -52,15 +52,11 @@ pub struct GetResult {
 #[derive(Debug, Clone, RustcDecodable)]
 pub struct Config {
     index_path: String,
-    json_file: String,
 }
 
 impl Default for Config {
     fn default() -> Config {
-        Config {
-            index_path: "".to_string(),
-            json_file: "".to_string(),
-        }
+        Config { index_path: "".to_string() }
     }
 }
 
@@ -114,7 +110,6 @@ fn create_index(json_file: &str, index_path: &str) -> Result<bool> {
 
         doc.add_text(title, page_title.as_str());
         doc.add_text(body, page_body.as_str());
-        //index_writer.add_document(doc).chain_err(|| "failed to add document to index")?;
         index_writer.add_document(doc);
     }
     index_writer.commit().map_err(|_| "failed to commit index")?;
@@ -162,19 +157,24 @@ fn get(index_path: &str, address: &str) -> Result<String> {
 }
 
 fn main() {
-    let matches = App::new("My Super Program")
+    let matches = App::new("Scrapbox Query")
         .version("1.0")
         .author("Masashi Iizuka <liquidz.uo@gmail.com>")
-        .about("Does awesome things")
         .arg(Arg::with_name("config")
             .short("c")
             .long("config")
             .value_name("FILE")
             .help("Sets a custom config file")
             .takes_value(true))
-        .subcommand(SubCommand::with_name("index").about("create index"))
+        .subcommand(SubCommand::with_name("init")
+            .about("Initialize index from a specified JSON file")
+            .arg(Arg::with_name("json")
+                .help("Sets a exported JSON file")
+                .required(true)
+                .index(1)
+                .takes_value(true)))
         .subcommand(SubCommand::with_name("search")
-            .about("create index")
+            .about("Search documents and print search results")
             .arg(Arg::with_name("json")
                 .long("json")
                 .help("JSON format"))
@@ -183,8 +183,9 @@ fn main() {
                 .index(1)
                 .takes_value(true)))
         .subcommand(SubCommand::with_name("get")
-            .about("get document")
+            .about("Retrieve a specified document")
             .arg(Arg::with_name("address")
+                .help("Sets a document address")
                 .required(true)
                 .index(1)
                 .takes_value(true)))
@@ -201,10 +202,12 @@ fn main() {
 
     if let Ok(config) = read_config(conf_name.as_str()) {
         match matches.subcommand_name() {
-            Some("index") => {
+            Some("init") => {
+                let matches = matches.subcommand_matches("init")
+                    .expect("should match 'init' subcommand");
+                let json_file = matches.value_of("json").expect("should match 'json' value");
                 println!("start to create index");
-                if let Err(ref e) = create_index(config.json_file.as_str(),
-                                                 config.index_path.as_str()) {
+                if let Err(ref e) = create_index(json_file, config.index_path.as_str()) {
                     println!("{:?}", e);
                 } else {
                     println!("finish to create index");
