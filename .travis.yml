@@ -11,11 +11,6 @@ matrix:
       env: TARGET=x86_64-pc-windows-gnu
 
 before_script:
-  - sh ~/rust/lib/rustlib/uninstall.sh; exit 0
-  - export PATH="$PATH:$HOME/.cargo/bin"
-  - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain=$TRAVIS_RUST_VERSION
-  - rustc -V
-  - cargo -V
   - if [[ "${TARGET}" == "x86_64-pc-windows-gnu" ]]; then rustup target add $TARGET; fi
   - git --version
   - echo $TRAVIS_BRANCH
