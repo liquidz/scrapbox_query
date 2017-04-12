@@ -1,0 +1,50 @@
+language: rust
+dist: trusty
+
+matrix:
+  include:
+    - os: linux
+      rust: nightly
+      env: TARGET=x86_64-unknown-linux-gnu
+    - os: linux
+      rust: nightly
+      env: TARGET=x86_64-pc-windows-gnu
+
+before_script:
+  - sh ~/rust/lib/rustlib/uninstall.sh
+  - export PATH="$PATH:$HOME/.cargo/bin"
+  - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain=$TRAVIS_RUST_VERSION
+  - rustc -V
+  - cargo -V
+  - if [[ "${TARGET}" == "x86_64-pc-windows-gnu" ]]; then rustup target add $TARGET; fi
+  - git --version
+  - echo $TRAVIS_BRANCH
+  - git checkout $TRAVIS_BRANCH
+  - git rev-parse HEAD
+
+script:
+  - cargo build --target $TARGET
+  - RUST_TEST_TASKS=1 cargo test --verbose
+
+#notifications:
+#  email:
+#    on_success: never
+#    on_failure: change
+
+before_deploy:
+  - cargo build --target $TARGET --release
+#  - mkdir "scrapq-${TRAVIS_TAG}-${TARGET}"
+#  - cp target/$TARGET/release/scrapq LICENSE.txt README.md "scrapq-${TRAVIS_TAG}-${TARGET}"
+#  - zip "scrapq-${TRAVIS_TAG}-${TARGET}.zip" -r "scrapq-${TRAVIS_TAG}-${TARGET}"
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_TOKEN
+  file:
+    - target/release/scrapq
+    - target/x86_64-pc-windows-gnu/release/scrapq.exe
+  skip_cleanup: true
+  on:
+    repo: liquidz/scrapbox_query
+    overwrite: true
+    tags: true
