@@ -4,6 +4,7 @@ platform:
 environment:
   matrix:
     - TARGET: x86_64-pc-windows-msvc
+    - TARGET: x86_64-pc-windows-gnu
 
 install:
   - curl -sSf -o rustup-init.exe https://win.rustup.rs
@@ -15,7 +16,7 @@ build_script:
   - cmd: cargo build --release --target=%TARGET%
 
 artifacts:
-  - path: '**\*.exe'
+  - path: '**\scrapq.exe'
     name: MyApp
 
 cache:
