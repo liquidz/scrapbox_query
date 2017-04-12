@@ -13,3 +13,11 @@ install:
 
 build_script:
   - cmd: cargo build --release --target=%TARGET%
+
+artifacts:
+  - path: target\release\*.exe
+    name: MyApp
+
+cache:
+  - target
+  - C:\Users\appveyor\.cargo\registry
