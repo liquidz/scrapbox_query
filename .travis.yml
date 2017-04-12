@@ -40,9 +40,8 @@ before_deploy:
 deploy:
   provider: releases
   api_key: $GITHUB_TOKEN
-  file:
-    - target/release/scrapq
-    - target/x86_64-pc-windows-gnu/release/scrapq.exe
+  file_glob: true
+  file: target/$TARGET/release/scrapq{,.exe}
   skip_cleanup: true
   on:
     repo: liquidz/scrapbox_query
