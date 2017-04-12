@@ -15,7 +15,7 @@ build_script:
   - cmd: cargo build --release --target=%TARGET%
 
 artifacts:
-  - path: **\*.exe
+  - path: '**\*.exe'
     name: MyApp
 
 cache:
