@@ -1,13 +1,13 @@
-debug_linux:
+debug:
 	cargo build
+
+release:
+	cargo build --release
 
 debug_windows:
 	cargo build --target x86_64-pc-windows-gnu
 
-releast_linux:
-	cargo build --release
-
-releast_windows:
+release_windows:
 	cargo build --release --target x86_64-pc-windows-gnu
 
 test:
