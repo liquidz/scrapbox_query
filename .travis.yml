@@ -46,4 +46,4 @@ deploy:
   on:
     repo: liquidz/scrapbox_query
     overwrite: true
-    tags: true
+#    tags: true
