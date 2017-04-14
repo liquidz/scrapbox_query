@@ -1,7 +1,7 @@
 [package]
 name = "scrapq"
 version = "0.1.0"
-authors = ["liquidz <liquidz.uo@gmail.com>"]
+authors = ["Masashi Iizuka <liquidz.uo@gmail.com>"]
 
 [dependencies]
 clap = "2.2"
