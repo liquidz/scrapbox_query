@@ -47,5 +47,5 @@ deploy:
   on:
     repo: liquidz/scrapbox_query
     overwrite: true
-    branch: master
-#    tags: true
+    #branch: master
+    tags: true
